@@ -22,6 +22,8 @@
   var n = 40;
   var ns_degrees, ew_degrees;
 
+  var anchor_lat = null, anchor_lng = null;
+
   function initialize() {
     var latlng = new google.maps.LatLng(37.773258,139.691162);
     var myOptions = {
@@ -58,12 +60,30 @@
     google.maps.event.addListener(map, 'mousemove', function (event) {
       //console.log(event.latLng)
       var cellid = latlng2cell_id(event.latLng.Xa, event.latLng.Ya);
-      $('#debug_win').html(event.latLng.Xa + "<br\>" + event.latLng.Ya + "<br/>" + cellid);
+      var anchor = ""
+      if (anchor_lat !== null) {
+        angle = get_angle(anchor_lat, anchor_lng, event.latLng.Xa, event.latLng.Ya);
+        anchor = anchor_lat + ", " + anchor_lng + ", " + Math.floor(angle);
+      }
+
+      $('#debug_win').html(anchor + "<br/>" + event.latLng.Xa + ", " + event.latLng.Ya + "<br/>" + cellid);
     });
     google.maps.event.addListener(map, 'mouseup', function (event) {
-      console.log(event.latLng.Xa + ", " + event.latLng.Ya)
+      anchor_lat = event.latLng.Xa;
+      anchor_lng = event.latLng.Ya;
+
+      add_marker(anchor_lat, anchor_lng);
     });
   }
+
+  function add_marker(lat, lng) {
+    var point = new google.maps.LatLng(lat, lng);
+    var marker = new google.maps.Marker({
+      position: point,
+      map: map
+    });
+  }
+
   function line(from, to) {
     var path = new google.maps.Polyline({
       path: [from, to],
@@ -73,6 +93,19 @@
     });
 
     path.setMap(map);
+  }
+
+  function get_angle(from_lat, from_lng, to_lat, to_lng) {
+    y = to_lat - from_lat;
+    x = to_lng - from_lng;
+
+    angle = Math.atan2(y, x);
+    angle = -angle + (Math.PI / 2);
+    if (angle < 0) {
+      angle += (2 * Math.PI);
+    }
+
+    return degrees(angle);
   }
 
   function radian(degrees) {
@@ -98,6 +131,6 @@
 </head>
 <body onload="initialize()">
   <div id="map_canvas" style="width:100%; height:100%"></div>
-  <div id="debug_win" style="position: absolute; top: 10px; left: 10px; width: 300px; height: 100px; border: 1px solid #55a; background-color: #faffff"></div>
+  <div id="debug_win" style="position: absolute; top: 10px; left: 10px; width: 300px; height: 100px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;"></div>
 </body>
 </html>
