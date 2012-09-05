@@ -15,6 +15,13 @@
 </script>
 <script type="text/javascript">
   var map;
+
+  var origin_lat = 31.297328;
+  var origin_lng = 130.220947;
+  var width = 33333;
+  var n = 40;
+  var ns_degrees, ew_degrees;
+
   function initialize() {
     var latlng = new google.maps.LatLng(37.773258,139.691162);
     var myOptions = {
@@ -26,21 +33,16 @@
         myOptions);
 
 
-    var origin_lat = 31.297328;
-    var origin_lng = 130.220947;
-    var width = 33333;
-    var n = 40;
-
     var earth_r = 6378137.0;
     var earth_r_sw = earth_r * Math.cos(radian(origin_lat));
 
     // 南北のセル全体の緯度幅
-    var ns = degrees(width * n / earth_r);
+    ns_degrees = degrees(width * n / earth_r);
     // セル一つあたりの緯度幅
-    ns = ns / n;
+    ns = ns_degrees / n;
 
-    var ew = degrees(width * n / earth_r_sw);
-    ew = ew / n;
+    ew_degrees = degrees(width * n / earth_r_sw);
+    ew = ew_degrees / n;
 
     for (var i = 0; i <= n; i++) {
       var from = new google.maps.LatLng(origin_lat + ns * i, origin_lng);
@@ -55,7 +57,8 @@
 
     google.maps.event.addListener(map, 'mousemove', function (event) {
       //console.log(event.latLng)
-      $('#debug_win').html(event.latLng.Xa + "<br\>" + event.latLng.Ya);
+      var cellid = latlng2cell_id(event.latLng.Xa, event.latLng.Ya);
+      $('#debug_win').html(event.latLng.Xa + "<br\>" + event.latLng.Ya + "<br/>" + cellid);
     });
     google.maps.event.addListener(map, 'mouseup', function (event) {
       console.log(event.latLng.Xa + ", " + event.latLng.Ya)
@@ -80,9 +83,17 @@
     return radian * 180 / Math.PI;
   }
 
-  function debug(msg) {
-  }
+  function latlng2cell_id(latitude, longitude) {
+    // y(緯度方向の位置) を求める (0 ～ n-1)
+    lat = latitude - origin_lat;
+    y = Math.floor(lat / (ns_degrees / n));
 
+    // x(経度方向の位置) を求める (0 ～ n-1)
+    lon = longitude - origin_lng;
+    x = Math.floor(lon / (ew_degrees / n));
+
+    return y * 40 + x;
+  }
 </script>
 </head>
 <body onload="initialize()">
