@@ -11,15 +11,67 @@
     src="http://maps.google.com/maps/api/js?sensor=false">
 </script>
 <script type="text/javascript">
+
+  var GMAP;
+
   function initialize() {
-    var latlng = new google.maps.LatLng(-34.397, 150.644);
+    var latlng = new google.maps.LatLng(37.773258,139.691162);
     var myOptions = {
-      zoom: 8,
+      zoom: 6,
       center: latlng,
       mapTypeId: google.maps.MapTypeId.ROADMAP
     };
-    var map = new google.maps.Map(document.getElementById("map_canvas"),
+    GMAP = new google.maps.Map(document.getElementById("map_canvas"),
         myOptions);
+
+
+    var origin_lat = 31.297328;
+    var origin_lng = 130.220947;
+    var width = 33333;
+    var n = 40;
+
+    var earth_r = 6378137.0;
+    var earth_r_sw = earth_r * Math.cos(radian(origin_lat));
+
+    // 南北のセル全体の緯度幅
+    var ns = degrees(width * n / earth_r);
+    // セル一つあたりの緯度幅
+    ns = ns / n;
+
+    // 東西のセル全体の経度幅
+    var ew = degrees(width * n / earth_r_sw);
+    // セル一つあたりの経度幅
+    ew = ew / n;
+
+    for (var i = 0; i <= n; i++) {
+      var from = new google.maps.LatLng(origin_lat + ns * i, origin_lng);
+      var to   = new google.maps.LatLng(origin_lat + ns * i, origin_lng + ew * n);
+      line(from, to);
+    }
+    for (var i = 0; i <= n; i++) {
+      var from = new google.maps.LatLng(origin_lat,          origin_lng + ew * i);
+      var to   = new google.maps.LatLng(origin_lat + ns * n, origin_lng + ew * i);
+      line(from, to);
+    }
+  }
+
+  function line(from, to) {
+    var path = new google.maps.Polyline({
+      path: [from, to],
+      strokeColor: "#0000FF",
+      strokeOpacity: 1.0,
+      strokeWeight: 1
+    });
+
+    path.setMap(GMAP);
+  }
+
+  function radian(degrees) {
+    return degrees * Math.PI / 180;
+  }
+
+  function degrees(radian) {
+    return radian * 180 / Math.PI;
   }
 
 </script>
@@ -28,3 +80,4 @@
   <div id="map_canvas" style="width:100%; height:100%"></div>
 </body>
 </html>
+
