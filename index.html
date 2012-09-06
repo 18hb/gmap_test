@@ -23,6 +23,7 @@
   var ns_degrees, ew_degrees;
 
   var anchor_lat = null, anchor_lng = null;
+  var mousedown_x, mousedown_y;
 
   function initialize() {
     var latlng = new google.maps.LatLng(37.773258,139.691162);
@@ -68,11 +69,16 @@
 
       $('#debug_win').html(anchor + "<br/>" + event.latLng.Xa + ", " + event.latLng.Ya + "<br/>" + cellid);
     });
+    google.maps.event.addListener(map, 'mousedown', function (event) {
+      mouse_down_x = event.pixel.x;
+      mouse_down_y = event.pixel.y;
+    });
     google.maps.event.addListener(map, 'mouseup', function (event) {
-      anchor_lat = event.latLng.Xa;
-      anchor_lng = event.latLng.Ya;
-
-      add_marker(anchor_lat, anchor_lng);
+      if (event.pixel.x == mouse_down_x && event.pixel.y == mouse_down_y) {
+        anchor_lat = event.latLng.Xa;
+        anchor_lng = event.latLng.Ya;
+        add_marker(anchor_lat, anchor_lng);
+      }
     });
   }
 
