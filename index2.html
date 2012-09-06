@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<style type="text/css">
+  html { height: 100% }
+  body { height: 100%; margin: 0px; padding: 0px }
+  #map_canvas { height: 100% }
+</style>
+<script type="text/javascript"
+    src="http://maps.google.com/maps/api/js?sensor=false">
+</script>
+<script type="text/javascript"
+    src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js">
+</script>
+<script type="text/javascript">
+  var map;
+
+  var origin_lat = 31.297328;
+  var origin_lng = 130.220947;
+  var width = 33333;
+  var n = 40;
+  var ns_degrees, ew_degrees;
+
+  var anchor_lat = null, anchor_lng = null;
+  var mousedown_x, mousedown_y;
+
+  var earth_r, earth_r_sw;
+
+  function initialize() {
+    var latlng = new google.maps.LatLng(37.773258,139.691162);
+    var myOptions = {
+      zoom: 6,
+      center: latlng,
+      mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById("map_canvas"),
+        myOptions);
+
+
+    earth_r = 6378137.0;
+    earth_r_sw = earth_r * Math.cos(radian(origin_lat));
+
+    // 南北のセル全体の緯度幅
+    ns_degrees = degrees(width * n / earth_r);
+    // セル一つあたりの緯度幅
+    ns = ns_degrees / n;
+
+    ew_degrees = degrees(width * n / earth_r_sw);
+    ew = ew_degrees / n;
+
+    for (var i = 0; i <= n; i++) {
+      var from = new google.maps.LatLng(origin_lat + ns * i, origin_lng);
+      var to   = new google.maps.LatLng(origin_lat + ns * i, origin_lng + ew * n);
+      line(from, to);
+    }
+    for (var i = 0; i <= n; i++) {
+      var from = new google.maps.LatLng(origin_lat,          origin_lng + ew * i);
+      var to   = new google.maps.LatLng(origin_lat + ns * n, origin_lng + ew * i);
+      line(from, to);
+    }
+
+    google.maps.event.addListener(map, 'mousemove', function (event) {
+      //console.log(event.latLng)
+      var cellid = latlng2cell_id(event.latLng.Xa, event.latLng.Ya);
+      var anchor = ""
+      if (anchor_lat !== null) {
+        angle = get_angle(anchor_lat, anchor_lng, event.latLng.Xa, event.latLng.Ya);
+        anchor = anchor_lat + ", " + anchor_lng + ", " + Math.floor(angle);
+      }
+
+      $('#debug_win').html(anchor + "<br/>" + event.latLng.Xa + ", " + event.latLng.Ya + "<br/>" + cellid);
+    });
+    google.maps.event.addListener(map, 'mousedown', function (event) {
+      mouse_down_x = event.pixel.x;
+      mouse_down_y = event.pixel.y;
+    });
+    google.maps.event.addListener(map, 'mouseup', function (event) {
+      if (event.pixel.x == mouse_down_x && event.pixel.y == mouse_down_y) {
+        anchor_lat = event.latLng.Xa;
+        anchor_lng = event.latLng.Ya;
+        add_marker(anchor_lat, anchor_lng);
+      }
+    });
+  }
+
+  function add_marker(lat, lng) {
+    var point = new google.maps.LatLng(lat, lng);
+    var marker = new google.maps.Marker({
+      position: point,
+      map: map
+    });
+
+    google.maps.event.addListener(marker, 'click', function (event) {
+      var lat = event.latLng.Xa;
+      var lng = event.latLng.Ya;
+
+      var points = create_test_route(lat, lng);
+      _draw_path(points, "#FF0000");
+    });
+  }
+
+  function line(from, to) {
+    var path = new google.maps.Polyline({
+      path: [from, to],
+      strokeColor: "#0000FF",
+      strokeOpacity: 1.0,
+      strokeWeight: 1
+    });
+
+    path.setMap(map);
+  }
+
+  function create_test_route(lat, lng) {
+    var points = _create_test_route(lat, lng);
+
+    var test_data_str = "";
+    for (var i = 0, len = points.length; i < len; i++) {
+      lat = points[i][0];
+      lng = points[i][1];
+      test_data_str += lat + "," + lng + "\n";
+    }
+    $("#test_data").val(test_data_str);
+
+    return points2gLatLng(points);
+  }
+
+  function points2gLatLng(points) {
+    var gLatLng = [];
+    for (var i = 0, len = points.length; i < len; i++) {
+      lat = points[i][0];
+      lng = points[i][1];
+
+      gLatLng.push(new google.maps.LatLng(lat, lng));
+    }
+    return gLatLng;
+  }
+
+  function _create_test_route(lat, lng) {
+    var length = 500; // 1タイムスロットあたりに進む距離(とりあえず固定で500m)
+    var points = [];
+
+    // 最初のの向きを決定
+    var dir = get_init_direction();
+
+    // 次の座標を取得
+    var npoint = next_point(lat, lng, length, dir);
+
+    points.push([lat, lng]);
+    points.push(npoint);
+
+    for (var i = 0; i < 500; i++) {
+      dir = get_random_direction(dir);
+      npoint = next_point(npoint[0], npoint[1], length, dir);
+      points.push(npoint);
+    }
+
+    return points;
+  }
+
+  // lat, lng: 位置
+  // length: 進む長さ(m)
+  // dir: 方向: 0～2*PI(ラジアン)
+  function next_point(lat, lng, length, dir) {
+    // x: 東西の移動量(m)
+    // y: 南北の移動量(m)
+    var x = length * Math.cos(dir);
+    var y = length * Math.sin(dir);
+
+    // あんまり正確じゃないけど、とりあえず、メートル→度変換
+    var x_degrees = degrees(x / earth_r);
+    var y_degrees = degrees(y / earth_r);
+
+    return [lat + y_degrees, lng + x_degrees];
+  }
+
+  // 0 ～ 2*PI の値からランダムに値を返す(ラジアン)
+  function get_init_direction() {
+    var rand = Math.random(); // 0 <= rand < 1
+    rand = rand * (Math.PI * 2) // 0 <= rand < 2*PI
+    return rand;
+  }
+
+  // base_direction の向きを基準として、プラスマイナスn度でランダムな方向を作成する
+  // base_direction: 向き(ラジアン)
+  function get_random_direction(base_direction) {
+    // ±10度の値を作成
+    var n = 20;
+    var rand = Math.random(); // 0 <= rand < 1
+    rand = rand * (n * 2) // 0 <= rand < 2*n
+    rand -= n;
+
+    rand = radian(rand);
+    return base_direction + rand;
+
+    /*
+    var theta = 5 * Math.PI / 4;
+    var l = 1.414;
+
+    var teihen = l * Math.cos(theta);
+    var takasa = l * Math.sin(theta);
+
+    console.log(teihen + ", " + takasa);
+    */
+  }
+
+  function get_angle(from_lat, from_lng, to_lat, to_lng) {
+    y = to_lat - from_lat;
+    x = to_lng - from_lng;
+
+    angle = Math.atan2(y, x);
+    angle = -angle + (Math.PI / 2);
+    if (angle < 0) {
+      angle += (2 * Math.PI);
+    }
+
+    return degrees(angle);
+  }
+
+  function radian(degrees) {
+    return degrees * Math.PI / 180;
+  }
+
+  function degrees(radian) {
+    return radian * 180 / Math.PI;
+  }
+
+  function latlng2cell_id(latitude, longitude) {
+    // y(緯度方向の位置) を求める (0 ～ n-1)
+    lat = latitude - origin_lat;
+    y = Math.floor(lat / (ns_degrees / n));
+
+    // x(経度方向の位置) を求める (0 ～ n-1)
+    lon = longitude - origin_lng;
+    x = Math.floor(lon / (ew_degrees / n));
+
+    return y * 40 + x;
+  }
+
+  function draw_path_from_textarea_data() {
+    var data_string = $("#test_data").val();
+    var records = data_string.split(/\r\n|\r|\n/);
+
+    var points = [];
+    for (var i = 0, len = records.length; i < len; i++) {
+      var latlng = records[i].split(",");
+      if (latlng.length != 2) {
+        continue;
+      }
+      points.push(latlng);
+    }
+
+    var gLatLng = points2gLatLng(points);
+    _draw_path(gLatLng, "#AA00FF");
+
+    if (gLatLng.length > 0) {
+      var marker = new google.maps.Marker({
+        position: gLatLng[0],
+        map: map
+      });
+    }
+  }
+
+  function _draw_path(points, color) {
+    var path = new google.maps.Polyline({
+      path: points,
+      strokeColor: color,
+      strokeOpacity: 1.0,
+      strokeWeight: 2
+    });
+    path.setMap(map);
+  }
+</script>
+</head>
+<body onload="initialize()">
+  <div id="map_canvas" style="width:100%; height:100%"></div>
+  <div id="debug_win" style="display: none; position: absolute; top: 10px; left: 10px; width: 300px; height: 100px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;"></div>
+  <div  style="display: none; position: absolute; top: 120px; left: 10px; width: 300px; height: 150px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
+    <textarea id="test_data" style="width: 100%; height: 100px;" name="test_data"></textarea>
+    <input type="button" value="描画" onclick="draw_path_from_textarea_data()" />
+  </div>
+</body>
+</html>
