@@ -38,7 +38,7 @@
     map = new google.maps.Map(document.getElementById("map_canvas"),
         myOptions);
 
-    hide_address_bar_ios5();
+    //hide_address_bar_ios5();
     return;
 
     earth_r = 6378137.0;
@@ -89,8 +89,7 @@
 
   function hide_address_bar_ios5() {
     document.getElementById('map_canvas').style.height
-//        = document.getElementsByTagName('html')[0].clientHeight + 60 + 'px';
-        = document.getElementsByTagName('html')[0].clientHeight + 50 + 'px';
+        = document.getElementsByTagName('html')[0].clientHeight + 60 + 'px';
     window.scrollTo(0,0);
 //    window.addEventListener('scroll', function() {
 //      window.scrollTo(0,0);
