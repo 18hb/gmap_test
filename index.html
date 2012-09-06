@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+<meta charset="UTF-8" />
 <meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
 <style type="text/css">
   html { height: 100% }
@@ -96,13 +97,7 @@
       var lng = event.latLng.Ya;
 
       var points = create_test_route(lat, lng);
-      var path = new google.maps.Polyline({
-        path: points,
-        strokeColor: "#FF0000",
-        strokeOpacity: 1.0,
-        strokeWeight: 2
-      });
-      path.setMap(map);
+      _draw_path(points, "#FF0000");
     });
   }
 
@@ -118,10 +113,33 @@
   }
 
   function create_test_route(lat, lng) {
-    var length = 500; // 1タイムスロットあたりに進む距離(とりあえず固定で500m)
-    var points = [];
+    var points = _create_test_route(lat, lng);
 
     var test_data_str = "";
+    for (var i = 0, len = points.length; i < len; i++) {
+      lat = points[i][0];
+      lng = points[i][1];
+      test_data_str += lat + "," + lng + "\n";
+    }
+    $("#test_data").val(test_data_str);
+
+    return points2gLatLng(points);
+  }
+
+  function points2gLatLng(points) {
+    var gLatLng = [];
+    for (var i = 0, len = points.length; i < len; i++) {
+      lat = points[i][0];
+      lng = points[i][1];
+
+      gLatLng.push(new google.maps.LatLng(lat, lng));
+    }
+    return gLatLng;
+  }
+
+  function _create_test_route(lat, lng) {
+    var length = 500; // 1タイムスロットあたりに進む距離(とりあえず固定で500m)
+    var points = [];
 
     // 最初のの向きを決定
     var dir = get_init_direction();
@@ -129,20 +147,14 @@
     // 次の座標を取得
     var npoint = next_point(lat, lng, length, dir);
 
-    points.push(new google.maps.LatLng(lat, lng));
-    points.push(new google.maps.LatLng(npoint[0], npoint[1]));
-
-    test_data_str += lat + "," + lng + "\n";
-    test_data_str += npoint[0] + "," + npoint[1] + "\n";
+    points.push([lat, lng]);
+    points.push(npoint);
 
     for (var i = 0; i < 500; i++) {
-       dir = get_random_direction(dir);
-       npoint = next_point(npoint[0], npoint[1], length, dir);
-       points.push(new google.maps.LatLng(npoint[0], npoint[1]));
-       test_data_str += npoint[0] + "," + npoint[1] + "\n";
+      dir = get_random_direction(dir);
+      npoint = next_point(npoint[0], npoint[1], length, dir);
+      points.push(npoint);
     }
-
-    $("#test_data").text(test_data_str);
 
     return points;
   }
@@ -225,13 +237,48 @@
 
     return y * 40 + x;
   }
+
+  function draw_path_from_textarea_data() {
+    var data_string = $("#test_data").val();
+    var records = data_string.split(/\r\n|\r|\n/);
+
+    var points = [];
+    for (var i = 0, len = records.length; i < len; i++) {
+      var latlng = records[i].split(",");
+      if (latlng.length != 2) {
+        continue;
+      }
+      points.push(latlng);
+    }
+
+    var gLatLng = points2gLatLng(points);
+    _draw_path(gLatLng, "#AA00FF");
+
+    if (gLatLng.length > 0) {
+      var marker = new google.maps.Marker({
+        position: gLatLng[0],
+        map: map
+      });
+    }
+  }
+
+  function _draw_path(points, color) {
+    var path = new google.maps.Polyline({
+      path: points,
+      strokeColor: color,
+      strokeOpacity: 1.0,
+      strokeWeight: 2
+    });
+    path.setMap(map);
+  }
 </script>
 </head>
 <body onload="initialize()">
   <div id="map_canvas" style="width:100%; height:100%"></div>
   <div id="debug_win" style="position: absolute; top: 10px; left: 10px; width: 300px; height: 100px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;"></div>
-  <div  style="position: absolute; top: 120px; left: 10px; width: 300px; height: 100px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
-    <textarea id="test_data" style="width: 100%; height: 100%;"></textarea>
+  <div  style="position: absolute; top: 120px; left: 10px; width: 300px; height: 150px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
+    <textarea id="test_data" style="width: 100%; height: 100px;" name="test_data"></textarea>
+    <input type="button" value="描画" onclick="draw_path_from_textarea_data()" />
   </div>
 </body>
 </html>
