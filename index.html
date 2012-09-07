@@ -28,6 +28,10 @@
 
   var earth_r, earth_r_sw;
 
+
+  var GPOINTS = [], GMARKERS = [];
+  var cus_marker, cus_marker_shadow;
+
   function initialize() {
     var latlng = new google.maps.LatLng(37.773258,139.691162);
     var myOptions = {
@@ -83,37 +87,36 @@
         add_marker(anchor_lat, anchor_lng);
       }
     });
+
+    // カスタムマーカーアイコンパラメータ生成
+    custom_marker();
   }
 
   function add_marker(lat, lng) {
     var point = new google.maps.LatLng(lat, lng);
     var marker = new google.maps.Marker({
       position: point,
+      icon: cus_marker,
+      shadow: cus_marker_shadow,
       map: map
     });
 
-    google.maps.event.addListener(marker, 'click', function (event) {
-      var lat = event.latLng.Xa;
-      var lng = event.latLng.Ya;
+//    google.maps.event.addListener(marker, 'click', function (event) {
+//      var lat = event.latLng.Xa;
+//      var lng = event.latLng.Ya;
+//
+//      var points = create_test_route(lat, lng);
+//
+//     _draw_path(points, "#FF0000");
+//
+//    });
 
-      var points = create_test_route(lat, lng);
-      _draw_path(points, "#FF0000");
-    });
-  }
+    var points = create_test_route(lat, lng);
+    var latlng = points2gLatLng(points);
+   _draw_path(latlng, "#FF0000");
 
-  function line(from, to) {
-    var path = new google.maps.Polyline({
-      path: [from, to],
-      strokeColor: "#0000FF",
-      strokeOpacity: 1.0,
-      strokeWeight: 1
-    });
-
-    path.setMap(map);
-  }
-
-  function create_test_route(lat, lng) {
-    var points = _create_test_route(lat, lng);
+    GMARKERS.push(marker);
+    GPOINTS.push(points);
 
     var test_data_str = "";
     for (var i = 0, len = points.length; i < len; i++) {
@@ -122,9 +125,20 @@
       test_data_str += lat + "," + lng + "\n";
     }
     $("#test_data").val(test_data_str);
-
-    return points2gLatLng(points);
   }
+
+  function line(from, to) {
+    var path = new google.maps.Polyline({
+      path: [from, to],
+      strokeColor: "#0000FF",
+      strokeOpacity: 0.8,
+      strokeWeight: 1
+    });
+
+    path.setMap(map);
+  }
+
+
 
   function points2gLatLng(points) {
     var gLatLng = [];
@@ -137,7 +151,7 @@
     return gLatLng;
   }
 
-  function _create_test_route(lat, lng) {
+  function create_test_route(lat, lng) {
     var length = 500; // 1タイムスロットあたりに進む距離(とりあえず固定で500m)
     var points = [];
 
@@ -267,10 +281,40 @@
       path: points,
       strokeColor: color,
       strokeOpacity: 1.0,
-      strokeWeight: 2
+      strokeWeight: 1
     });
     path.setMap(map);
   }
+
+  function tslot_on_change() {
+    var tslot = $("#range_tslot").val();
+    $("#disp_tslot").html(tslot);
+
+    for (var i = 0, len = GPOINTS.length; i < len; i++) {
+      set_marker_position(GMARKERS[i], GPOINTS[i], tslot);
+    }
+  }
+
+  function set_marker_position(marker, points, tslot) {
+    var latlng = new google.maps.LatLng(points[tslot][0], points[tslot][1]);
+    marker.setPosition(latlng);
+  }
+
+  function custom_marker() {
+
+    var colors = ["green", "red", "blue", "orange", "purple", "gray",  "black", "white"];
+
+    cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[3] + '.png',　//★マーカ種類
+      new google.maps.Size(12, 20),
+      new google.maps.Point(0,0),
+      new google.maps.Point(6,20));
+
+    cus_marker_shadow = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_shadow.png',　　//★マーカ影
+      new google.maps.Size(22, 20),
+      new google.maps.Point(0,0),
+      new google.maps.Point(6, 20));;
+  }
+
 </script>
 </head>
 <body onload="initialize()">
@@ -279,6 +323,8 @@
   <div  style="position: absolute; top: 120px; left: 10px; width: 300px; height: 150px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
     <textarea id="test_data" style="width: 100%; height: 100px;" name="test_data"></textarea>
     <input type="button" value="描画" onclick="draw_path_from_textarea_data()" />
+    <input id="range_tslot" type="range" min="0" max="500" value="0" onchange="tslot_on_change()"/>
+    <span id="disp_tslot"></span>
   </div>
 </body>
 </html>
