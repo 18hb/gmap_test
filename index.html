@@ -199,7 +199,7 @@
   // base_direction の向きを基準として、プラスマイナスn度でランダムな方向を作成する
   // base_direction: 向き(ラジアン)
   function get_random_direction(base_direction) {
-    // ±10度の値を作成
+    // ±n度の値を作成
     var n = 20;
     var rand = Math.random(); // 0 <= rand < 1
     rand = rand * (n * 2) // 0 <= rand < 2*n
@@ -280,7 +280,7 @@
     var path = new google.maps.Polyline({
       path: points,
       strokeColor: color,
-      strokeOpacity: 1.0,
+      strokeOpacity: 0.6,
       strokeWeight: 1
     });
     path.setMap(map);
@@ -304,7 +304,7 @@
 
     var colors = ["green", "red", "blue", "orange", "purple", "gray",  "black", "white"];
 
-    cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[3] + '.png',　//★マーカ種類
+    cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[0] + '.png',　//★マーカ種類
       new google.maps.Size(12, 20),
       new google.maps.Point(0,0),
       new google.maps.Point(6,20));
@@ -323,7 +323,8 @@
   <div  style="position: absolute; top: 120px; left: 10px; width: 300px; height: 150px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
     <textarea id="test_data" style="width: 100%; height: 100px;" name="test_data"></textarea>
     <input type="button" value="描画" onclick="draw_path_from_textarea_data()" />
-    <input id="range_tslot" type="range" min="0" max="500" value="0" onchange="tslot_on_change()"/>
+    <!--input id="range_tslot" type="range" min="0" max="500" value="0" onchange="tslot_on_change()"/-->
+    <input id="range_tslot" type="number" min="0" max="500" value="0" onchange="tslot_on_change()"/>
     <span id="disp_tslot"></span>
   </div>
 </body>
