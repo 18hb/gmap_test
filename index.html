@@ -26,7 +26,7 @@
   var anchor_lat = null, anchor_lng = null;
   var mousedown_x, mousedown_y;
 
-  var earth_r, earth_r_sw;
+  var earth_r;
 
 
   var GPOINTS = [], GMARKERS = [];
@@ -44,14 +44,13 @@
 
 
     earth_r = 6378137.0;
-    earth_r_sw = earth_r * Math.cos(radian(origin_lat));
 
     // 南北のセル全体の緯度幅
     ns_degrees = degrees(width * n / earth_r);
     // セル一つあたりの緯度幅
     ns = ns_degrees / n;
 
-    ew_degrees = degrees(width * n / earth_r_sw);
+    ew_degrees = degrees(width * n / earth_r_at_lat(origin_lat));
     ew = ew_degrees / n;
 
     for (var i = 0; i <= n; i++) {
@@ -117,6 +116,11 @@
 
     // カスタムマーカーアイコンパラメータ生成
     custom_marker();
+  }
+
+  // 緯度 lat 地点での 地球の半径
+  function earth_r_at_lat(lat) {
+    return earth_r * Math.cos(radian(lat));
   }
 
   function add_marker(lat, lng) {
@@ -186,7 +190,7 @@
     var x = length * Math.cos(dir);
     var y = length * Math.sin(dir);
 
-    // あんまり正確じゃないけど、とりあえず、メートル→度変換
+    var x_degrees = degrees(x / earth_r_at_lat(lat));
     var x_degrees = degrees(x / earth_r);
     var y_degrees = degrees(y / earth_r);
 
@@ -284,7 +288,7 @@
     var path = new google.maps.Polyline({
       path: points,
       strokeColor: color,
-      strokeOpacity: 0.6,
+      strokeOpacity: 1,
       strokeWeight: 1
     });
     path.setMap(map);
