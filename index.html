@@ -76,15 +76,42 @@
 
       $('#debug_win').html(anchor + "<br/>" + event.latLng.Xa + ", " + event.latLng.Ya + "<br/>" + cellid);
     });
+
     google.maps.event.addListener(map, 'mousedown', function (event) {
       mouse_down_x = event.pixel.x;
       mouse_down_y = event.pixel.y;
     });
+
     google.maps.event.addListener(map, 'mouseup', function (event) {
       if (event.pixel.x == mouse_down_x && event.pixel.y == mouse_down_y) {
         anchor_lat = event.latLng.Xa;
         anchor_lng = event.latLng.Ya;
-        add_marker(anchor_lat, anchor_lng);
+
+        var marker = add_marker(anchor_lat, anchor_lng);
+
+        var points = create_test_route(anchor_lat, anchor_lng);
+        var latlng = points2gLatLng(points);
+        draw_path(latlng, "#FF0000");
+
+        GMARKERS.push(marker);
+        GPOINTS.push(points);
+
+        var test_data_str = "";
+        for (var i = 0, len = points.length; i < len; i++) {
+          lat = points[i][0];
+          lng = points[i][1];
+          test_data_str += lat + "," + lng + "\n";
+        }
+        $("#test_data").val(test_data_str);
+
+//        google.maps.event.addListener(marker, 'click', function (event) {
+//          var lat = event.latLng.Xa;
+//          var lng = event.latLng.Ya;
+//
+//          var points = create_test_route(lat, lng);
+//
+//         _draw_path(points, "#FF0000");
+//       });
       }
     });
 
@@ -101,30 +128,7 @@
       map: map
     });
 
-//    google.maps.event.addListener(marker, 'click', function (event) {
-//      var lat = event.latLng.Xa;
-//      var lng = event.latLng.Ya;
-//
-//      var points = create_test_route(lat, lng);
-//
-//     _draw_path(points, "#FF0000");
-//
-//    });
-
-    var points = create_test_route(lat, lng);
-    var latlng = points2gLatLng(points);
-   _draw_path(latlng, "#FF0000");
-
-    GMARKERS.push(marker);
-    GPOINTS.push(points);
-
-    var test_data_str = "";
-    for (var i = 0, len = points.length; i < len; i++) {
-      lat = points[i][0];
-      lng = points[i][1];
-      test_data_str += lat + "," + lng + "\n";
-    }
-    $("#test_data").val(test_data_str);
+    return marker;
   }
 
   function line(from, to) {
@@ -266,7 +270,7 @@
     }
 
     var gLatLng = points2gLatLng(points);
-    _draw_path(gLatLng, "#AA00FF");
+    draw_path(gLatLng, "#AA00FF");
 
     if (gLatLng.length > 0) {
       var marker = new google.maps.Marker({
@@ -276,7 +280,7 @@
     }
   }
 
-  function _draw_path(points, color) {
+  function draw_path(points, color) {
     var path = new google.maps.Polyline({
       path: points,
       strokeColor: color,
@@ -304,12 +308,12 @@
 
     var colors = ["green", "red", "blue", "orange", "purple", "gray",  "black", "white"];
 
-    cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[0] + '.png',　//★マーカ種類
+    cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[0] + '.png', //★マーカ種類
       new google.maps.Size(12, 20),
       new google.maps.Point(0,0),
       new google.maps.Point(6,20));
 
-    cus_marker_shadow = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_shadow.png',　　//★マーカ影
+    cus_marker_shadow = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_shadow.png', //★マーカ影
       new google.maps.Size(22, 20),
       new google.maps.Point(0,0),
       new google.maps.Point(6, 20));;
@@ -323,8 +327,8 @@
   <div  style="position: absolute; top: 120px; left: 10px; width: 300px; height: 150px; border: 1px solid #55a; background-color: #faffff; font-size: 80%;">
     <textarea id="test_data" style="width: 100%; height: 100px;" name="test_data"></textarea>
     <input type="button" value="描画" onclick="draw_path_from_textarea_data()" />
-    <!--input id="range_tslot" type="range" min="0" max="500" value="0" onchange="tslot_on_change()"/-->
-    <input id="range_tslot" type="number" min="0" max="500" value="0" onchange="tslot_on_change()"/>
+    <input id="range_tslot" type="range" min="0" max="500" value="0" onchange="tslot_on_change()" style="width: 240px" />
+    <!--input id="range_tslot" type="number" min="0" max="500" value="0" onchange="tslot_on_change()"/-->
     <span id="disp_tslot"></span>
   </div>
 </body>
