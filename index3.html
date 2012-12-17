@@ -7,23 +7,91 @@
   html { height: 100% }
   body { height: 100%; margin: 0px; padding: 0px }
   #map_canvas { height: 100%; overflow: auto; -webkit-overflow-scrolling: touch; }
+  .shop_info_hide {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width:100%;
+      height:100%;
+      background-color: white;
+      -webkit-transition: 0.3s;
+  }
+
+  .shop_info_show {
+      top: 0;
+  }
+
 </style>
 <script type="text/javascript" src="http://maps.google.com/maps/api/js?sensor=true"></script>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 <script type="text/javascript">
-    var map;
-    function initialize() {
-        var latlng = new google.maps.LatLng(37.773258,139.691162);
-        var myOptions = {
-            zoom: 6,
-            center: latlng,
-            mapTypeId: google.maps.MapTypeId.ROADMAP
-        };
-        map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
-    }
+var map;
+var cus_marker, cus_marker_shadow;
+
+function initialize() {
+    var latlng = new google.maps.LatLng(37.773258,139.691162);
+    var myOptions = {
+        zoom: 6,
+        center: latlng,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    map = new google.maps.Map(document.getElementById("map_canvas"), myOptions);
+
+    $('#close_shop_info').click(function(){
+            $(this).parent().removeClass("shop_info_show");
+    });
+
+    var ret = custom_marker();
+    cus_marker = ret["marker"];
+    cus_marker_shadow = ret["shadow"];
+
+    add_marker(12, 37.773258, 139.691162);
+}
+
+function add_marker(id, lat, lng) {
+    var point = new google.maps.LatLng(lat, lng);
+    var marker = new google.maps.Marker({
+        position: point,
+        icon: cus_marker,
+        shadow: cus_marker_shadow,
+        map: map
+    });
+
+    google.maps.event.addListener(marker, 'click', function (event) {
+        show_shop_info(id);
+    });
+
+}
+
+function show_shop_info(id) {
+    $('.shop_id').text(id);
+    $('#shop_info').addClass("shop_info_show");
+}
+
+function custom_marker() {
+
+    var colors = ["green", "red", "blue", "orange", "purple", "gray",  "black", "white"];
+
+    var cus_marker = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[0] + '.png', //★マーカ種類
+            new google.maps.Size(12, 20),
+            new google.maps.Point(0,0),
+            new google.maps.Point(6,20));
+
+    var cus_marker_shadow = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_shadow.png', //★マーカ影
+            new google.maps.Size(22, 20),
+            new google.maps.Point(0,0),
+            new google.maps.Point(6, 20));
+
+    return { "marker": cus_marker, "shadow": cus_marker_shadow };
+}
+
 </script>
 </head>
 <body onload="initialize()">
   <div id="map_canvas" style="width:100%; height:100%"></div>
+  <div id="shop_info" class="shop_info_hide">
+      <div>aaaa<span class="shop_id"></span></div>
+      <div id="close_shop_info">close</div>
+  </div>
 </body>
 </html>
