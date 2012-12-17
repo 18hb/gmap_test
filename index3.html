@@ -36,7 +36,7 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.8.1/jquery.min.js"></script>
 <script type="text/javascript">
 var map;
-var cus_marker, cus_marker_shadow;
+var cus_marker, cus_marker_shadow, cus_marker_active;
 
 function initialize() {
     var latlng = new google.maps.LatLng(37.773258, 139.691162);
@@ -61,6 +61,7 @@ function initialize() {
     var ret = custom_marker();
     cus_marker = ret["marker"];
     cus_marker_shadow = ret["shadow"];
+    cus_marker_active = ret["active"];
 
     add_marker(12, 37.773258, 139.691162);
     add_marker(13, 36.773258, 139.691162);
@@ -76,6 +77,7 @@ function add_marker(id, lat, lng) {
     });
 
     google.maps.event.addListener(marker, 'click', function (event) {
+        marker.setIcon(cus_marker_active);
         show_shop_info(id);
     });
 
@@ -109,7 +111,13 @@ function custom_marker() {
             new google.maps.Point(0,0),
             new google.maps.Point(6, 20));
 
-    return { "marker": cus_marker, "shadow": cus_marker_shadow };
+    var cus_marker_active = new google.maps.MarkerImage('http://labs.google.com/ridefinder/images/mm_20_' + colors[1] + '.png', //★マーカ種類
+            new google.maps.Size(12, 20),
+            new google.maps.Point(0,0),
+            new google.maps.Point(6,20));
+
+
+    return { "marker": cus_marker, "shadow": cus_marker_shadow, "active": cus_marker_active };
 }
 
 </script>
