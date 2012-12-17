@@ -18,6 +18,9 @@
 
       overflow: auto;
       /*-webkit-overflow-scrolling: touch;*/
+
+      /*border: 1px solid rgba(0, 0, 0, .15);*/
+      box-shadow: 0 0 2px rgba(0, 0, 0, .15);
   }
 
   .shop_info_full {
@@ -39,6 +42,7 @@ function initialize() {
     var latlng = new google.maps.LatLng(37.773258, 139.691162);
     var myOptions = {
         zoom: 6,
+        scaleControl: true,
         center: latlng,
         mapTypeId: google.maps.MapTypeId.ROADMAP
     };
@@ -49,11 +53,17 @@ function initialize() {
         $(this).parent().removeClass("shop_info_intro");
     });
 
+    $('#more_shop_info').click(function(){
+        $(this).parent().removeClass("shop_info_intro");
+        $(this).parent().addClass("shop_info_full");
+    });
+
     var ret = custom_marker();
     cus_marker = ret["marker"];
     cus_marker_shadow = ret["shadow"];
 
     add_marker(12, 37.773258, 139.691162);
+    add_marker(13, 36.773258, 139.691162);
 }
 
 function add_marker(id, lat, lng) {
@@ -72,8 +82,17 @@ function add_marker(id, lat, lng) {
 }
 
 function show_shop_info(id) {
-    $('.shop_id').text(id);
-    $('#shop_info').addClass("shop_info_full");
+    if ($('#shop_info').hasClass("shop_info_intro")) {
+        $('#shop_info').bind("webkitTransitionEnd", function(){
+            $(this).unbind("webkitTransitionEnd");
+
+            $('.shop_id').text(id);
+            $(this).addClass("shop_info_intro");
+        });
+        $('#shop_info').removeClass("shop_info_intro");
+    } else {
+        $('#shop_info').addClass("shop_info_intro");
+    }
 }
 
 function custom_marker() {
@@ -99,6 +118,7 @@ function custom_marker() {
   <div id="map_canvas" style="width:100%; height:100%"></div>
   <div id="shop_info" class="shop_info_hide">
       <div id="close_shop_info">close</div>
+      <div id="more_shop_info">more</div>
       <div>aaaa<span class="shop_id"></span></div>
       <div>
           aaaa<br/>
